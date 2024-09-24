@@ -5,7 +5,7 @@ import time
 from dotenv import load_dotenv
 import os
 
-st.set_page_config(page_title="Plotting Demo", page_icon="📈")
+st.set_page_config(page_title="Tarefas sem prazo")
 
 load_dotenv()
 
