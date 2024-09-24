@@ -1,14 +1,36 @@
 from selenium import webdriver as opcoesSelenium
 from selenium.webdriver.common.by import By
 import streamlit as st
+import tempfile
 import time
-from dotenv import load_dotenv
 import os
 
-st.set_page_config(page_title="Tarefas sem prazo")
+# Inicialize a chave 'temp_file_path' no session_state se ainda não existir
+if 'temp_file_path' not in st.session_state:
+    st.session_state['temp_file_path'] = None
 
-load_dotenv()
+# Função para armazenar credenciais em um arquivo temporário
+def salvar_credenciais(username, password):
+    with tempfile.NamedTemporaryFile(delete=False, mode='w') as temp_file:
+        temp_file.write(f'username={username}\npassword={password}')
+        return temp_file.name  # Retorna o caminho do arquivo temporário
 
+# Função para ler as credenciais do arquivo temporário
+def ler_credenciais(caminho_arquivo):
+    with open(caminho_arquivo, 'r') as file:
+        credentials = file.read()
+        # Transformar as credenciais em um dicionário
+        creds_dict = dict(line.split('=') for line in credentials.splitlines())
+        return creds_dict
+
+# Função para deletar o arquivo temporário
+def deletar_arquivo(caminho_arquivo):
+    try:
+        os.remove(caminho_arquivo)
+        st.success("Arquivo temporário deletado com sucesso.")
+    except Exception as e:
+        st.error(f"Erro ao deletar o arquivo: {e}")
+    
 
 def carregar_selenium():
     #navegador = opcoesSelenium.Chrome()
@@ -19,13 +41,12 @@ def carregar_selenium():
     chrome_options.add_argument('--disable-dev-shm-usage')
     navegador = opcoesSelenium.Chrome(options=chrome_options)
     return navegador
+
+
     
-    
-def login():    
+def login(documento, password):   
     # Obter os valores das variáveis de ambiente
     navegador = carregar_selenium()
-    password = os.getenv('PASSWORD')
-    documento = os.getenv('DOCUMENTO')
     navegador.get('https://cmsp.ip.tv/')
     time.sleep(5)
     try:
@@ -100,4 +121,28 @@ def login():
 
 
 if __name__ == '__main__':
-    login()
+    # Interface do Streamlit para capturar o login e senha
+    st.title("Login de Usuário")
+    
+    # Campos de entrada para o usuário
+    username = st.text_input("Nome de Usuário")
+    password = st.text_input("Senha", type="password")
+
+    # Botão de login
+    if st.button("Iniciar processo"):
+        if username and password:
+            # Salvar as credenciais em um arquivo temporário
+            temp_file_path = salvar_credenciais(username, password)
+            st.success("Credenciais salvas com sucesso!")
+            st.session_state['temp_file_path'] = temp_file_path  # Salvar o caminho na sessão
+        else:
+            st.error("Por favor, insira o nome de usuário e a senha.")
+
+    # Verificar se há um caminho salvo no session_state
+    if st.session_state['temp_file_path']:
+        credenciais = ler_credenciais(st.session_state['temp_file_path'])
+        login(credenciais.get('username'), credenciais.get('password'))
+        
+        # Excluir o arquivo temporário após o uso
+        deletar_arquivo(st.session_state['temp_file_path'])
+        st.session_state['temp_file_path'] = None  # Remover o caminho da sessão
