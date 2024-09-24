@@ -1,8 +1,11 @@
 from selenium import webdriver as opcoesSelenium
 from selenium.webdriver.common.by import By
+import streamlit as st
 import time
 from dotenv import load_dotenv
 import os
+
+st.set_page_config(page_title="Plotting Demo", page_icon="📈")
 
 load_dotenv()
 
@@ -98,4 +101,3 @@ def login():
 
 if __name__ == '__main__':
     login()
-    
