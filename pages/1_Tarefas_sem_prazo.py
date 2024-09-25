@@ -1,11 +1,12 @@
-from selenium import webdriver as opcoesSelenium
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-import streamlit as st
-import tempfile
-import time
-import os
+# Importações necessárias
+from selenium import webdriver as opcoesSelenium  # Importa o módulo Selenium para automação do navegador
+from selenium.webdriver.common.by import By  # Permite localizar elementos na página usando diferentes métodos (e.g., XPATH, ID)
+from selenium.webdriver.support.ui import WebDriverWait  # Utilizado para esperar elementos na página
+from selenium.webdriver.support import expected_conditions as EC  # Define condições que serão esperadas no WebDriverWait
+import streamlit as st  # Framework para criar aplicações web simples e interativas
+import tempfile  # Para criar arquivos temporários para armazenar credenciais de forma transitória
+import time  # Permite controlar o tempo de execução (e.g., atrasos com sleep)
+import os  # Fornece funções para interagir com o sistema operacional
 
 # Inicialize a chave 'temp_file_path' no session_state se ainda não existir
 if 'temp_file_path' not in st.session_state:
@@ -13,12 +14,23 @@ if 'temp_file_path' not in st.session_state:
 
 # Função para armazenar credenciais em um arquivo temporário
 def salvar_credenciais(username, password):
+    """
+    Salva o nome de usuário e a senha em um arquivo temporário.
+    :param username: Nome de usuário digitado pelo usuário.
+    :param password: Senha digitada pelo usuário.
+    :return: Caminho do arquivo temporário onde as credenciais foram salvas.
+    """
     with tempfile.NamedTemporaryFile(delete=False, mode='w') as temp_file:
         temp_file.write(f'username={username}\npassword={password}')
         return temp_file.name  # Retorna o caminho do arquivo temporário
 
 # Função para ler as credenciais do arquivo temporário
 def ler_credenciais(caminho_arquivo):
+    """
+    Lê as credenciais armazenadas no arquivo temporário.
+    :param caminho_arquivo: Caminho do arquivo temporário com as credenciais.
+    :return: Um dicionário com 'username' e 'password'.
+    """
     with open(caminho_arquivo, 'r') as file:
         credentials = file.read()
         # Transformar as credenciais em um dicionário
@@ -27,6 +39,10 @@ def ler_credenciais(caminho_arquivo):
 
 # Função para deletar o arquivo temporário
 def deletar_arquivo(caminho_arquivo):
+    """
+    Deleta o arquivo temporário onde as credenciais estão armazenadas.
+    :param caminho_arquivo: Caminho do arquivo temporário a ser deletado.
+    """
     try:
         os.remove(caminho_arquivo)
         st.success("Senhas apagadas com sucesso!")
@@ -35,19 +51,30 @@ def deletar_arquivo(caminho_arquivo):
 
 # Função para carregar o navegador Selenium com as opções desejadas
 def carregar_selenium():
+    """
+    Carrega o navegador Chrome com as configurações necessárias para rodar em segundo plano.
+    :return: Instância do navegador Chrome.
+    """
     chrome_options = opcoesSelenium.ChromeOptions()
-    chrome_options.add_argument('--headless')
-    chrome_options.add_argument('--no-sandbox')
-    chrome_options.add_argument('--disable-dev-shm-usage')
+    chrome_options.add_argument('--headless')  # Roda o navegador em modo headless (sem interface gráfica)
+    chrome_options.add_argument('--no-sandbox')  # Desativa o sandbox do navegador
+    chrome_options.add_argument('--disable-dev-shm-usage')  # Desativa o uso excessivo de memória compartilhada
     navegador = opcoesSelenium.Chrome(options=chrome_options)
     return navegador
 
 # Função de login que tenta autenticar e, se falhar, retorna ao fluxo de entrada de dados
 def login(documento, password):
+    """
+    Realiza o login na plataforma e processa as atividades com prazos.
+    :param documento: Documento do usuário (ex: RG com dígito).
+    :param password: Senha do usuário.
+    :return: True se o login e o processamento forem bem-sucedidos, False caso contrário.
+    """
     navegador = carregar_selenium()
-    navegador.get('https://cmsp.ip.tv/')
+    navegador.get('https://cmsp.ip.tv/')  # Navega até a URL da aplicação
     time.sleep(5)
     try:
+        # Realiza o processo de login automatizado
         navegador.find_element(By.XPATH, '//*[@id="root"]/div[2]/div/div[1]/div/div[3]/form/div/div[1]/div/div').click()
         time.sleep(2)
         navegador.find_element(By.XPATH, '//*[@id=":r4:"]/li[1]').click()
@@ -69,22 +96,22 @@ def login(documento, password):
         except:
             st.success("Login efetuado com sucesso! Aguarde verificação de atividades.")
             
-            # Atividades
+            # Processo de navegação e remoção de prazos de atividades
             navegador.find_element(By.XPATH, '//*[@id="1"]/ul/li/button').click()
             time.sleep(2)
             navegador.find_element(By.XPATH, '//*[@id="1"]/ul/li/div/div/div/ul/li[2]/a').click()
             time.sleep(2)
-
             navegador.find_element(By.XPATH, '/html/body/div[1]/div[2]/div[3]/div/div/div/div[1]/div[2]/div/div/div/div/div/div[3]/div/div[2]/div[2]/div/div[2]').click()
             time.sleep(2)
             navegador.find_element(By.XPATH, '/html/body/div[5]/div[3]/ul/li[3]').click()
             time.sleep(3)
             tabela = navegador.find_element(By.XPATH, '//*[@id="root"]/div[2]/div[3]/div/div/div/div[1]/div[2]/div/div/div/div/div/div[3]/div/div[1]/div[1]/div[2]/div/div/div/table')
             time.sleep(2)
-            linhas = tabela.find_elements(By.TAG_NAME, 'tr')          
+            linhas = tabela.find_elements(By.TAG_NAME, 'tr')
             time.sleep(2)
             dados = []
             ids = []
+            # Coleta os dados da tabela para identificar atividades com prazo
             for linha_atual in linhas:
                 colunas = linha_atual.find_elements(By.TAG_NAME, 'td')
                 linha_dados = [coluna.text for coluna in colunas]
@@ -105,9 +132,9 @@ def login(documento, password):
 
                 # Processa cada ID, atualizando a barra de progresso a cada passo
                 for index, id in enumerate(ids):
+                    # Executa a remoção do prazo para cada atividade
                     navegador.find_element(By.XPATH, f'//*[@id="{id}"]/div/button').click()
-                    time.sleep(2)     
-
+                    time.sleep(2)
                     navegador.find_element(By.XPATH, '/html/body/div[5]/div[3]/ul/li[3]/div[2]').click()
                     time.sleep(3)
                     navegador.find_element(By.XPATH, '/html/body/div[1]/div[2]/div/div/div/div/div[1]/div[2]/div/div/div/div/div/div/div[1]/button[2]').click()
@@ -122,10 +149,9 @@ def login(documento, password):
                         navegador.find_element(By.XPATH, '/html/body/div[5]/div[3]/div/div/div[2]/button[1]').click()
                         time.sleep(3)
 
-                    # salva a mudança de data
+                    # Salva a mudança de data
                     navegador.find_element(By.XPATH, '//*[@id="root"]/div[2]/div/div/div/div/div[1]/div[2]/div/div/div/div/div/div/button[2]').click()
                     time.sleep(3)
-                    
                     navegador.find_element(By.XPATH, '//*[@id="root"]/div[2]/div/div/div/div/div[1]/div[2]/div/div/div/div/div/div/button[1]').click()
                     time.sleep(3)
                     navegador.find_element(By.XPATH, '/html/body/div[1]/div[2]/div[3]/div/div/div/div[1]/div[2]/div/div/div/div/div/div[3]/div/div[2]/div[2]/div/div[2]').click()
@@ -153,8 +179,8 @@ if __name__ == '__main__':
     st.title("Removedor de prazos do Tarefas SP")
     
     # Campos de entrada para o usuário
-    username = st.text_input("RG com dígito")
-    password = st.text_input("Senha", type="password")
+    username = st.text_input("RG com dígito")  # Entrada para o nome de usuário
+    password = st.text_input("Senha", type="password")  # Entrada para a senha
 
     # Botão de login
     if st.button("Entrar"):
@@ -178,3 +204,4 @@ if __name__ == '__main__':
         # Se o login falhar, mostre uma mensagem para o usuário tentar novamente
         if not login_sucesso:
             st.warning("Tente novamente digitando suas credenciais corretamente.")
+
