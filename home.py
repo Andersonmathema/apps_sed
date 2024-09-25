@@ -4,3 +4,5 @@ st.set_page_config(
     page_title="Hello",
     page_icon="👋",
 )
+
+st.title('Aplicações para a Secretaria Escolar Digital')

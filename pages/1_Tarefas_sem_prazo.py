@@ -7,8 +7,6 @@ import tempfile
 import time
 import os
 
-
-
 # Inicialize a chave 'temp_file_path' no session_state se ainda não existir
 if 'temp_file_path' not in st.session_state:
     st.session_state['temp_file_path'] = None
@@ -37,7 +35,6 @@ def deletar_arquivo(caminho_arquivo):
 
 # Função para carregar o navegador Selenium com as opções desejadas
 def carregar_selenium():
-    #navegador = opcoesSelenium.Chrome()
     chrome_options = opcoesSelenium.ChromeOptions()
     chrome_options.add_argument('--headless')
     chrome_options.add_argument('--no-sandbox')
@@ -68,26 +65,10 @@ def login(documento, password):
                 EC.presence_of_element_located((By.XPATH, '/html/body/div[1]/div[1]/div/div'))
             )
             st.error("Falha no login. Por favor, verifique suas credenciais e tente novamente.")
-            navegador.quit()
             return False  # Indica que o login falhou e precisa ser tentado novamente
         except:
-            st.success("Login efetuado com sucesso!")
+            st.success("Login efetuado com sucesso! Aguarde verificação de atividades.")
             
-             # Adiciona uma barra de progresso após o login bem-sucedido
-            progress_text = "Operação em progresso. Isso pode levar cerca de 30 minutos. Por favor, aguarde."
-            my_bar = st.progress(0, text=progress_text)
-
-            # Simulação de um processo longo, atualizando a barra de progresso lentamente
-            total_steps = 1800  # Total de segundos para um processo de 30 minutos
-            for step in range(total_steps):
-                # Aqui você pode adicionar suas operações reais
-                time.sleep(1)  # Simula 1 segundo de trabalho por etapa
-                progress = (step + 1) / total_steps * 100  # Calcula o progresso em porcentagem
-                my_bar.progress(int(progress), text=progress_text)
-
-            # Conclui o processo e limpa a barra de progresso
-            my_bar.empty()
-
             # Atividades
             navegador.find_element(By.XPATH, '//*[@id="1"]/ul/li/button').click()
             time.sleep(2)
@@ -109,46 +90,62 @@ def login(documento, password):
                 linha_dados = [coluna.text for coluna in colunas]
                 dados.append(linha_dados)
             del dados[0]
-            for id in dados:           
-                ids.append(id[8])
-            
-            for id in ids:
-                navegador.find_element(By.XPATH, f'//*[@id="{id}"]/div/button').click()
-                time.sleep(2)     
+            for id in dados:
+                if id[9] != '-':
+                    ids.append(id[8])
 
-                navegador.find_element(By.XPATH, '/html/body/div[5]/div[3]/ul/li[3]/div[2]').click()
-                time.sleep(3)
-                navegador.find_element(By.XPATH, '/html/body/div[1]/div[2]/div/div/div/div/div[1]/div[2]/div/div/div/div/div/div/div[1]/button[2]').click()
-                time.sleep(3)
-                checkbox = navegador.find_element(By.XPATH, '/html/body/div[5]/div[3]/div/div/div[1]/div[1]/div[2]/div[1]/span/span[1]/input')
-                if checkbox.is_selected():  # Verifica se o checkbox está checado
-                    checkbox.click()  # Clica para desmarcar
+            # Inicializa a barra de progresso para o processamento dos IDs
+            total_ids = len(ids)
+            if total_ids == 0:
+                st.error("Nenhuma data válida encontrada para processamento.")
+            else:
+                st.info(f'Foram encontradas {total_ids} atividades com prazo', icon="ℹ️")
+                progress_text = "Processando a remoção de prazo. Por favor, aguarde."
+                my_bar = st.progress(0, text=progress_text)
+
+                # Processa cada ID, atualizando a barra de progresso a cada passo
+                for index, id in enumerate(ids):
+                    navegador.find_element(By.XPATH, f'//*[@id="{id}"]/div/button').click()
+                    time.sleep(2)     
+
+                    navegador.find_element(By.XPATH, '/html/body/div[5]/div[3]/ul/li[3]/div[2]').click()
+                    time.sleep(3)
+                    navegador.find_element(By.XPATH, '/html/body/div[1]/div[2]/div/div/div/div/div[1]/div[2]/div/div/div/div/div/div/div[1]/button[2]').click()
+                    time.sleep(3)
+                    checkbox = navegador.find_element(By.XPATH, '/html/body/div[5]/div[3]/div/div/div[1]/div[1]/div[2]/div[1]/span/span[1]/input')
+                    if checkbox.is_selected():  # Verifica se o checkbox está checado
+                        checkbox.click()  # Clica para desmarcar
+                        time.sleep(2)
+                        navegador.find_element(By.XPATH, '/html/body/div[5]/div[3]/div/div/div[2]/button[2]').click()
+                        time.sleep(3)
+                    else:
+                        navegador.find_element(By.XPATH, '/html/body/div[5]/div[3]/div/div/div[2]/button[1]').click()
+                        time.sleep(3)
+
+                    # salva a mudança de data
+                    navegador.find_element(By.XPATH, '//*[@id="root"]/div[2]/div/div/div/div/div[1]/div[2]/div/div/div/div/div/div/button[2]').click()
+                    time.sleep(3)
+                    
+                    navegador.find_element(By.XPATH, '//*[@id="root"]/div[2]/div/div/div/div/div[1]/div[2]/div/div/div/div/div/div/button[1]').click()
+                    time.sleep(3)
+                    navegador.find_element(By.XPATH, '/html/body/div[1]/div[2]/div[3]/div/div/div/div[1]/div[2]/div/div/div/div/div/div[3]/div/div[2]/div[2]/div/div[2]').click()
                     time.sleep(2)
-                    navegador.find_element(By.XPATH, '/html/body/div[5]/div[3]/div/div/div[2]/button[2]').click()
-                    time.sleep(3)
-                else:
-                    navegador.find_element(By.XPATH, '/html/body/div[5]/div[3]/div/div/div[2]/button[1]').click()
-                    time.sleep(3)
+                    navegador.find_element(By.XPATH, '/html/body/div[5]/div[3]/ul/li[3]').click()
+                    time.sleep(3)  # Simule o tempo que leva para processar um ID (substitua pelo código real)
 
-                # salva a mudança de data
-                navegador.find_element(By.XPATH, '//*[@id="root"]/div[2]/div/div/div/div/div[1]/div[2]/div/div/div/div/div/div/button[2]').click()
-                time.sleep(3)
-                
-                navegador.find_element(By.XPATH, '//*[@id="root"]/div[2]/div/div/div/div/div[1]/div[2]/div/div/div/div/div/div/button[1]').click()
-                time.sleep(3)
-                navegador.find_element(By.XPATH, '/html/body/div[1]/div[2]/div[3]/div/div/div/div[1]/div[2]/div/div/div/div/div/div[3]/div/div[2]/div[2]/div/div[2]').click()
-                time.sleep(2)
-                navegador.find_element(By.XPATH, '/html/body/div[5]/div[3]/ul/li[3]').click()
-                time.sleep(3)
-            
+                    # Atualiza a barra de progresso
+                    progresso = (index + 1) / total_ids * 100
+                    my_bar.progress(int(progresso), text=f"{progress_text} ({index + 1} de {total_ids}) processados.")
 
-        navegador.quit()
+                # Conclui o processo e limpa a barra de progresso
+                my_bar.empty()
+                st.success("Todas as atividades foram processadas com sucesso!")
 
     except Exception as e:
-        st.error(f"Erro durante o processo de login: {e}")
-        navegador.quit()
-        return False  # Indica que ocorreu um erro e precisa tentar novamente
-    
+        st.error(f"Erro durante o processo: {e}")
+    finally:
+        navegador.quit()  # Garantir que o navegador seja fechado
+
     return True  # Indica que o login foi bem-sucedido
 
 if __name__ == '__main__':
@@ -167,13 +164,13 @@ if __name__ == '__main__':
             st.success("Credenciais salvas com sucesso! Não se preocupe, elas serão apagadas ao final do processo!")
             st.session_state['temp_file_path'] = temp_file_path  # Salvar o caminho na sessão
         else:
-            st.error("Por favor, insira o nome o RG com dígito e a senha.")
+            st.error("Por favor, insira o RG com dígito e a senha.")
 
     # Verificar se há um caminho salvo no session_state e tentar login
     if st.session_state['temp_file_path']:
         credenciais = ler_credenciais(st.session_state['temp_file_path'])
         login_sucesso = login(credenciais.get('username'), credenciais.get('password'))
-        
+        st.link_button('Acesse o Tarefas SP', 'https://cmsp.ip.tv/')
         # Excluir o arquivo temporário após o uso
         deletar_arquivo(st.session_state['temp_file_path'])
         st.session_state['temp_file_path'] = None  # Remover o caminho da sessão
