@@ -102,4 +102,4 @@ Para dúvidas ou sugestões, entre em contato:
 
 - **Nome:** Anderson
 - **Email:** andersonandrades@prof.educacao.sp.gov.br
-- **GitHub:** [Seu GitHub](https://github.com/ProfAndersonAndrade)
+- **GitHub:** [Prof Anderson Andrade](https://github.com/ProfAndersonAndrade)
