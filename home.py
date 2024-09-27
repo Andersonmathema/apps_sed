@@ -6,3 +6,5 @@ st.set_page_config(
 )
 
 st.title('Aplicações para a Secretaria Escolar Digital')
+
+st.text("Clique na barra lateral no aplicativo que deseja usar")
